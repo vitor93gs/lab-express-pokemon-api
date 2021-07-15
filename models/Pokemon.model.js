@@ -25,10 +25,10 @@ const PokemonSchema = mongoose.Schema({
       "dragon",
       "fighting",
     ],
-    height: { type: Number, min: 0 },
-    weight: { type: Number, min: 0 },
-    sprite: { type: String, trim: true },
   },
+  height: { type: Number, min: 0 },
+  weight: { type: Number, min: 0 },
+  sprite: { type: String, trim: true },
 });
 
 module.exports = mongoose.model("Pokemon", PokemonSchema);

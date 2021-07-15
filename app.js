@@ -18,6 +18,13 @@ async function init() {
 
     // Configurar a instância do Express para usar o roteador definido no arquivo 'pokemon.routes'
     app.use("/", pokemonRouter);
+    // Middleware de captura de erros
+    app.use((err, req, res) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ msg: err });
+      }
+    });
 
     app.listen(PORT, () =>
       console.log(`Server up and running at port ${PORT}`)
