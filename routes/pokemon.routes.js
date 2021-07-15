@@ -22,64 +22,53 @@ router.get("/pokemon", async (req, res) => {
 });
 
 // 2. An GET /pokemon/:id route, that serves an object of a specific Pokemon (search in the array using the provided id)
-router.get("/pokemon/:id", (req, res) => {
-  const id = req.params.id; // ATENÇÃO: os parâmetros SEMPRE são strings. Cuidado ao compará-los com tipos numéricos.
-
-  const foundPokemon = allPokemon.find((currentPokemon) => {
-    return currentPokemon.id === Number(id); // Temos que converter o parâmetro de rota para número para podermos fazer a comparação correta
-  });
-
-  if (foundPokemon) {
-    return res.json(foundPokemon);
+router.get("/pokemon/:id", async (req, res) => {
+  // ATENÇÃO: os parâmetros SEMPRE são strings. Cuidado ao compará-los com tipos numéricos.
+  try {
+    const result = await PokemonModel.findOne({ id: Number(req.params.id) });
+    console.log(result);
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ msg: err });
   }
-
-  return res.json({ msg: "Pokemon not found." });
 });
 
 // 3. A GET /search route, where the user can search Pokemons by name or type (when searching by type, should return all the pokemon found with that type)
-router.get("/search", (req, res) => {
+router.get("/search", async (req, res) => {
   // Caso a url seja `?name=jigglypuff` o objeto `query` será o seguinte:
   // {
   //   name: "jigglypuff";
   // }
-
-  // Fazemos um loop pra iterar sobre cada propriedade (chave) do objeto query
-  for (let key in req.query) {
-    // nesse caso, key = 'name'
-    const filteredPokemon = allPokemon.filter((currentPokemon) => {
-      // Pesquisando por tipos
-      if (key === "types") {
-        return currentPokemon.types.includes(req.query.types);
-      }
-
-      // Pesquisando por nome
-      return currentPokemon.name
-        .toLowerCase()
-        .includes(req.query.name.toLowerCase());
+  try {
+    const result = await PokemonModel.find({
+      $or: [{ name: req.query.name }, { types: req.query.types }],
     });
 
-    if (filteredPokemon.length) {
-      return res.json(filteredPokemon);
-    }
-
-    return res.json({ msg: "No Pokemon matches this search." });
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ msg: err });
   }
 });
 
 // 4. A POST /pokemon route, that inserts the new Pokemon into the existing list of all Pokemons (don't worry about persisting the data to the disk, we're gonan learn that later)
 
-router.post("/pokemon", (req, res) => {
-  const formData = req.body;
+router.post("/pokemon", async (req, res) => {
+  try {
+    const formData = req.body;
 
-  // Pegando o último id da lista de todos os Pokemons
-  const lastId = allPokemon[allPokemon.length - 1].id;
+    const lastAddedPokemon = await PokemonModel.findOne({}, null, {
+      sort: { id: -1 },
+      limit: 1,
+    });
 
-  // O novo Pokemon vai continuar a sequencia de ids
-  const newPokemon = { ...formData, id: lastId + 1 };
+    formData.id = lastAddedPokemon.id + 1;
+    console.log(formData);
+    const addedPokemon = await PokemonModel.create(formData);
 
-  allPokemon.push(newPokemon);
-
-  return res.json(newPokemon);
+    return res.status(200).json(addedPokemon);
+  } catch (err) {
+    return res.status(500).json({ msg: err });
+  }
 });
 
 // 5. A PUT /pokemon/:id route, that updates an existing Pokemon with the provided data
